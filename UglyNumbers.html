@@ -3,17 +3,21 @@
 <title>Counting the number of Combinations of a given n-digit number that resolve to an "Ugly Number"</title>
 <script>/* This program computes the number of combinations that evaluate to "Ugly Numbers", for a given number. */
 
-nmbr = prompt("Give me a number!");
+var nmbr = prompt("Give me a number!");//Prompts the user for input, which is stored in the variable nmbr.
 
-precomputed = {};
+var precomputed = {};
 
 alert("Ugly number count: " + calculate_ugliness(nmbr));
 
 
 
-function calculate_mod_x_counts(x, number)
+function calculate_mod_x_counts(x, number, whether_to_allow_initial_minus_sign)
 {
-	if (!precomputed[number])//already been calculated
+	if (!precomputed[x])
+		precomputed[x] = [];
+	if (!precomputed[x][whether_to_allow_initial_minus_sign])
+		precomputed[x][whether_to_allow_initial_minus_sign] = {}
+	if (!precomputed[x][whether_to_allow_initial_minus_sign][number])//already been calculated
 	//then calculate it and add it to "precomputed".
 	
 	{
@@ -27,15 +31,14 @@ function calculate_mod_x_counts(x, number)
 			f[i]= 0;
 		}
 		
-		//
 		for (i=1; i < num_digits; i++)
 		{
-			var j= Math.exp(10,i);//j corresponds to the point at which we're splitting our initial string into two substrings.
-			var lefthandnum= number/j;
-			var left_mod_counts = calculate_mod_x_counts(x, lefthandnum);//the recursive step
-			
+			var j= Math.pow(10,i);//j corresponds to the point at which we're splitting our initial string into two substrings.
+			var lefthandnum= Math.floor(number/j);
+			var left_mod_counts = calculate_mod_x_counts(x, lefthandnum, whether_to_allow_initial_minus_sign);//the recursive step
+			//debugger
 			var righthandnum= number%j;
-			var right_mod_counts = calculate_mod_x_counts(x, righthandnum);
+			var right_mod_counts = calculate_mod_x_counts(x, righthandnum, true); //for right-hand numbers we always want to include the negative version.
 			
 			
 			//For the given split point, use the mod-x-counts of the substrings to calculate those of the combined string.
@@ -44,16 +47,18 @@ function calculate_mod_x_counts(x, number)
 				for (l = 0; l < x; ++l)
 				{
 					f[(k+l)%x] += left_mod_counts[k] * right_mod_counts[l];
-					f[(k-l)%x] += left_mod_counts[k] * right_mod_counts[l];
 				}
 			} 
 		}
 		
-		var single_number_mod_count = number % x; //Will be a number from 0-x, exclusive
-		f[single_number_mod_count] += 1;
-		precomputed[number] = f;
+		f[number % x] += 1;
+		if (whether_to_allow_initial_minus_sign == true)
+		{
+			f[(-number) % x] += 1;
+		}
+		precomputed[x][whether_to_allow_initial_minus_sign][number] = f;
 	} //end if !precomputed(number) 
-	return precomputed[number];//precalculated or just
+	return precomputed[x][whether_to_allow_initial_minus_sign][number];//precalculated or just
 }
 
 function calculate_ugliness(number)/*Compute number of combinations that evaluate to a number divisible by 7
@@ -66,7 +71,6 @@ OR 5 OR 3 OR 2*/
 	//The following line counts numbers divisible by 2 of the following numbers twice, and numbers divisible by all 3, thrice.
 	//debugger
 	var result = calculate_mod_x_counts(2, number)[0] + calculate_mod_x_counts(5, number)[0] + calculate_mod_x_counts(7, number)[0]+ calculate_mod_x_counts(3, number)[0];
-
 	result -= (calculate_mod_x_counts((2*5), number)[0] +  calculate_mod_x_counts(2*7, number)[0] + calculate_mod_x_counts(5*7, number)[0]
 	+ calculate_mod_x_counts((3*2), number)[0] +  calculate_mod_x_counts(3*5, number)[0] + calculate_mod_x_counts(3*7, number)[0]);
 	
@@ -74,6 +78,7 @@ OR 5 OR 3 OR 2*/
 	result += calculate_mod_x_counts((2*5*7), number)[0] + calculate_mod_x_counts((3*5*7), number)[0] + calculate_mod_x_counts((2*3*7), number)[0] + calculate_mod_x_counts((2*3*5), number)[0];
 	//Finally, the quadruple case was added 4 times, subtracted six times, added 4 times, so must now be subtracted once.
 	result -= calculate_mod_x_counts((2*3*5*7), number)[0];
+	debugger
 	return result;	
 }
 
